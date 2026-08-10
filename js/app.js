@@ -26,6 +26,8 @@ let currentNight = 1;
 let currentDay = 0;
 let leftoverCardRole = null;
 let resumeMorningAfterBomber = false;
+let roleSearchTerm = "";
+let eliminationSequence = 0;
 
 // ============================================================
 // INITIALIZE APP
@@ -262,6 +264,16 @@ function drawRoleScreen() {
 
     let html = `
         <h2>Roles in Game</h2>
+        <input
+            id="roleSearch"
+            class="roleSearch"
+            type="search"
+            placeholder="Search roles"
+            aria-label="Search roles"
+            value="${escapeHTML(roleSearchTerm)}"
+            oninput="filterRoleList(this.value)"
+        >
+        <p id="noRoleSearchResults" style="display:none;">No matching roles found.</p>
     `;
 
 
@@ -289,14 +301,20 @@ function drawRoleScreen() {
     }
 
 
-    roles.forEach((role, index) => {
+    roles
+        .map((role, index) => ({ role, index }))
+        .sort((first, second) =>
+            first.role.role.localeCompare(second.role.role, undefined, { sensitivity: "base" })
+        )
+        .forEach(({ role, index }) => {
 
         html += `
 
-            <div class="playerRow">
+            <div class="playerRow roleOption" data-role-name="${escapeHTML(role.role.toLowerCase())}">
 
                 <span>
                     ${escapeHTML(role.role)}
+                    <span class="roleValue">${Number(role.value) >= 0 ? "+" : ""}${Number(role.value) || 0}</span>
                 </span>
 
                 <div>
@@ -330,6 +348,9 @@ function drawRoleScreen() {
 
     const cards = getTotalCards();
     const requiredCards = getRequiredCardCount();
+    const drunkIsSelected = roles.some(role =>
+        role.role === "Drunk" && Number(role.count) > 0
+    );
 
     const balance = getBalance();
 
@@ -352,6 +373,14 @@ function drawRoleScreen() {
             Balance: ${balance}
         </h3>
 
+        ${drunkIsSelected ? `
+            <p style="color:${cards === requiredCards ? "#8fda8f" : "#ff8f8f"}; font-size:.9rem;">
+                ${cards === requiredCards ?
+                    "Drunk is in play. The extra card has been selected." :
+                    "Drunk is in play. Select one extra card."}
+            </p>
+        ` : ""}
+
         <br>
 
         <button
@@ -373,6 +402,7 @@ function drawRoleScreen() {
 
 
     document.getElementById("screen").innerHTML = html;
+    filterRoleList(roleSearchTerm);
 
 }
 
@@ -458,6 +488,7 @@ function drawGameConfirmation() {
     const requiredCards = getRequiredCardCount();
 
     const totalValue = getBalance();
+    const automaticWinMessage = getPossibleSetupAutomaticWin();
 
 
     // ========================================================
@@ -586,6 +617,8 @@ function drawGameConfirmation() {
 
         ${roleHTML}
 
+        ${automaticWinMessage ? `<p style="color:#ff9b9b;">${escapeHTML(automaticWinMessage)}</p>` : ""}
+
         <hr>
 
         <button
@@ -598,7 +631,7 @@ function drawGameConfirmation() {
         <button
             type="button"
             onclick="startNightOne()"
-            ${totalCards !== requiredCards ? "disabled" : ""}
+            ${totalCards !== requiredCards || automaticWinMessage ? "disabled" : ""}
         >
             🌙 Start Night 1
         </button>
@@ -712,7 +745,7 @@ function drawLeftoverCardSelection() {
             <option value="">Select the leftover card</option>
             ${options}
         </select>
-        <button type="button" onclick="confirmLeftoverCard()">Continue ➜</button>
+        <button class="actionContinue" type="button" onclick="confirmLeftoverCard()">Continue ➜</button>
     `;
 
 }
@@ -724,6 +757,13 @@ function confirmLeftoverCard() {
 
     if (!selectedRole || selectedRole.role === "Drunk" || Number(selectedRole.count) < 1) {
         alert("Please select the leftover role card.");
+        return;
+    }
+
+    const automaticWinMessage = getSetupAutomaticWin(selectedRole.role);
+    if (automaticWinMessage) {
+        alert(automaticWinMessage);
+        drawRoleScreen();
         return;
     }
 
@@ -982,6 +1022,74 @@ function getRequiredCardCount() {
 
 }
 
+function getSetupAutomaticWin(leftoverRoleName = null) {
+
+    let werewolfTeamCount = 0;
+    let villagerTeamCount = 0;
+    let eliminationWolfCount = 0;
+
+    roles.forEach(role => {
+        const dealtCount = Math.max(
+            0,
+            Number(role.count) - (role.role === leftoverRoleName ? 1 : 0)
+        );
+
+        if (role.team === "Werewolf") {
+            werewolfTeamCount += dealtCount;
+
+            if (!["Minion", "Sorceress"].includes(role.role)) {
+                eliminationWolfCount += dealtCount;
+            }
+        } else {
+            villagerTeamCount += dealtCount;
+        }
+    });
+
+    const leftoverRole = roles.find(role => role.role === leftoverRoleName);
+    if (
+        leftoverRole?.team === "Werewolf" &&
+        !["Minion", "Sorceress"].includes(leftoverRole.role)
+    ) {
+        eliminationWolfCount++;
+    }
+
+    if (eliminationWolfCount === 0) {
+        return "The Villagers would win automatically because no elimination-capable Werewolf would be dealt.";
+    }
+
+    if (werewolfTeamCount >= villagerTeamCount) {
+        return "The Werewolf team would win automatically because it would equal or outnumber the Villager team.";
+    }
+
+    return null;
+
+}
+
+function getPossibleSetupAutomaticWin() {
+
+    const drunkIsSelected = roles.some(role =>
+        role.role === "Drunk" && Number(role.count) > 0
+    );
+
+    if (!drunkIsSelected) {
+        return getSetupAutomaticWin();
+    }
+
+    const possibleLeftovers = roles.filter(role =>
+        role.role !== "Drunk" && Number(role.count) > 0
+    );
+    const outcomes = possibleLeftovers.map(role =>
+        getSetupAutomaticWin(role.role)
+    );
+
+    if (outcomes.length > 0 && outcomes.every(Boolean)) {
+        return "Every possible leftover-card setup would produce an automatic win. Adjust the selected roles before starting.";
+    }
+
+    return null;
+
+}
+
 function startNightOneActions(role) {
 
     nightOneActionOrder = [];
@@ -1064,7 +1172,7 @@ function drawNightAction() {
 
     if (item.role.action === "KillPlayer") {
         availablePlayers = availablePlayers.filter(player =>
-            player.team !== "Werewolf" &&
+            !canChooseWerewolfElimination(player) &&
             !player.wolfTargetTonight
         );
     }
@@ -1114,10 +1222,6 @@ function drawNightAction() {
 
         html += `<select id="nightActionTarget"><option value="">Select Player</option>`;
 
-        if (item.role.action === "KillPlayer") {
-            html += `<option value="nobody">Nobody</option>`;
-        }
-
         availablePlayers.forEach(player => {
             const index = players.indexOf(player);
             html += `<option value="${index}">${escapeHTML(player.name)}</option>`;
@@ -1152,11 +1256,15 @@ function drawNightAction() {
     const followingAction = nightOneActionOrder[nightOneCurrentAction + 1];
     const packHasAnotherTarget = item.role.action === "KillPlayer" &&
         followingAction?.role.action === "KillPlayer";
+    const canChooseNobody = targetCount > 0 || item.role.action === "Hear";
 
     html += `
         <hr>
         ${packHasAnotherTarget ? "" : `<p>${readAloud(`${moderatorRoleName(item.role.role)}, go to sleep.`)}</p><hr>`}
-        <button class="actionContinue" type="button" onclick="confirmNightAction()">Continue ➜</button>
+        <div class="actionButtons">
+            <button type="button" onclick="confirmNightAction()">Continue ➜</button>
+            ${canChooseNobody ? `<button type="button" onclick="skipNightAction()">Nobody</button>` : ""}
+        </div>
     `;
 
     document.getElementById("screen").innerHTML = html;
@@ -1175,12 +1283,6 @@ function confirmNightAction() {
 
         if (!select || select.value === "") {
             alert("Please select a player.");
-            return;
-        }
-
-        if (item.role.action === "KillPlayer" && select.value === "nobody") {
-            item.skipped = true;
-            drawNightActionResult(item, []);
             return;
         }
 
@@ -1225,6 +1327,8 @@ function confirmNightAction() {
             targets[0].protected = true;
         } else {
             targets[0].attackedTonight = true;
+            targets[0].pendingDeathCause = "Witch attack";
+            targets[0].pendingDeathPhase = `Night ${currentNight}`;
         }
     }
 
@@ -1251,6 +1355,19 @@ function confirmNightAction() {
 
 }
 
+function skipNightAction() {
+
+    const item = nightOneActionOrder[nightOneCurrentAction];
+
+    if (!item) {
+        return;
+    }
+
+    item.skipped = true;
+    drawNightActionResult(item, []);
+
+}
+
 function drawNightActionResult(item, targets, includeQuestion = false) {
 
     const actionsWithVisibleResults = [
@@ -1269,8 +1386,8 @@ function drawNightActionResult(item, targets, includeQuestion = false) {
     ];
 
     if (
-        !includeQuestion &&
-        !actionsWithVisibleResults.includes(item.role.action)
+        item.skipped ||
+        (!includeQuestion && !actionsWithVisibleResults.includes(item.role.action))
     ) {
         advanceNightAction();
         return;
@@ -1370,10 +1487,10 @@ function getNightActionResult(item, targets) {
         case "RevealPlayer":
             item.actor.usedOncePerGameAction = true;
             if (target.team === "Werewolf") {
-                target.alive = false;
+                recordElimination(target, "Revealer", `Night ${currentNight}`);
                 return "They are on the Werewolf team and are eliminated.";
             }
-            item.actor.alive = false;
+            recordElimination(item.actor, "Revealer backlash", `Night ${currentNight}`);
             return "They are on the Villager team. The Revealer is eliminated.";
 
         case "Investigate":
@@ -1815,11 +1932,13 @@ function startNextNight() {
         player.attackedByWolvesTonight = false;
         player.wolfTargetTonight = false;
         player.wolfAttackCountsTonight = false;
+        player.pendingDeathCause = null;
+        player.pendingDeathPhase = null;
         player.protected = false;
         player.silenced = false;
         player.exiledTonight = false;
         player.tookActionTonight = false;
-    });
+        });
 
     const drunkCardReveal = currentNight === 3 ? transformDrunk() : null;
 
@@ -1900,6 +2019,26 @@ function startNextNight() {
 
 }
 
+function filterRoleList(searchText) {
+
+    const searchTerm = String(searchText || "").trim().toLowerCase();
+    roleSearchTerm = String(searchText || "");
+    const roleOptions = Array.from(document.querySelectorAll(".roleOption"));
+    let visibleCount = 0;
+
+    roleOptions.forEach(option => {
+        const matches = option.dataset.roleName.includes(searchTerm);
+        option.style.display = matches ? "flex" : "none";
+        visibleCount += matches ? 1 : 0;
+    });
+
+    const noResults = document.getElementById("noRoleSearchResults");
+    if (noResults) {
+        noResults.style.display = visibleCount === 0 ? "block" : "none";
+    }
+
+}
+
 function transformDrunk() {
 
     const drunk = players.find(player =>
@@ -1932,7 +2071,7 @@ function drawDrunkCardReveal(reveal) {
         <hr>
         <h2>${readAloud("Drunk, wake up.")}</h2>
         <p>${readAloud(`Your card is ${reveal.role.role}.`)}</p>
-        <button type="button" onclick="continueNightAfterDrunkCard()">Continue ➜</button>
+        <button class="actionContinue" type="button" onclick="continueNightAfterDrunkCard()">Continue ➜</button>
     `;
 
 }
@@ -1959,7 +2098,11 @@ function drawDayOne() {
 
         players.forEach(player => {
             if (player.toughGuyDeathPending) {
-                player.alive = false;
+                recordElimination(
+                    player,
+                    `Tough Guy delayed death${player.toughGuyDeathCause ? ` (${player.toughGuyDeathCause})` : ""}`,
+                    `Night ${currentNight}`
+                );
                 player.toughGuyDeathPending = false;
             }
         });
@@ -1968,10 +2111,15 @@ function drawDayOne() {
             if (player.attackedTonight && !player.protected) {
                 if (player.role === "Tough Guy") {
                     player.toughGuyDeathPending = true;
+                    player.toughGuyDeathCause = player.pendingDeathCause;
                     player.attackedTonight = false;
                     player.attackedByWolvesTonight = false;
                 } else {
-                    player.alive = false;
+                    recordElimination(
+                        player,
+                        player.pendingDeathCause || "Night attack",
+                        player.pendingDeathPhase || `Night ${currentNight}`
+                    );
                 }
             }
         });
@@ -2029,7 +2177,11 @@ function drawDayOne() {
         );
 
         newlyEliminated.forEach(player => {
-            player.alive = false;
+            recordElimination(
+                player,
+                player.connectionType === "cupid" ? "Cupid lover" : "Dire Wolf connection",
+                `Night ${currentNight}`
+            );
         });
     }
 
@@ -2099,7 +2251,8 @@ function drawDayOnePlayers() {
         const unavailable = unavailablePlayers.includes(player);
         const status = !player.alive ||
             (player.attackedTonight && !player.protected) ?
-            "Eliminated" : "Left the village";
+            `Eliminated${player.deathCause ? ` - ${player.deathCause}` : ""}${player.deathPhase ? `, ${player.deathPhase}` : ""}` :
+            "Left the village";
         const displayedRole = !player.alive ?
             `${player.roleRevealed ? "Role revealed" : "Role not revealed"} - ${player.role || "Unknown"}` :
             (player.role || "Unknown");
@@ -2119,7 +2272,7 @@ function drawDayOnePlayers() {
                 <div>
 
                     <strong>
-                        ${escapeHTML(player.name)}
+                        ${escapeHTML(player.name)}${player.team === "Werewolf" ? " 🐺" : ""}
                     </strong>
 
                     <br>
@@ -2197,15 +2350,22 @@ function startVote(index) {
         <p>Votes needed to eliminate: <strong>${votesNeeded}</strong></p>
         <p>Mayor: <strong>${escapeHTML(mayor?.name || "None")}</strong></p>
         <button type="button" onclick="resolveVote(${index}, true)">Eliminate</button>
-        <button type="button" onclick="resolveVote(${index}, false)">Save</button>
+        <button type="button" onclick="resolveVote(${index}, false)">Spare</button>
+        <button type="button" onclick="cancelVote()">Cancel Vote</button>
     `;
+
+}
+
+function cancelVote() {
+
+    drawDayOnePlayers();
 
 }
 
 function resolveVote(index, eliminate) {
 
     if (eliminate && players[index]) {
-        players[index].alive = false;
+        recordElimination(players[index], "Village vote", `Day ${currentDay}`);
         resolveEliminationConsequences();
         return;
     }
@@ -2237,7 +2397,7 @@ function resolveEliminationConsequences() {
                 connectedPlayer &&
                 !connectedPlayer.alive
             ) {
-                player.alive = false;
+                recordElimination(player, "Dire Wolf connection", `Day ${currentDay}`);
                 changed = true;
             }
 
@@ -2246,7 +2406,7 @@ function resolveEliminationConsequences() {
                 player.connectionType === "cupid" &&
                 connectedPlayer?.alive
             ) {
-                connectedPlayer.alive = false;
+                recordElimination(connectedPlayer, "Cupid lover", `Day ${currentDay}`);
                 changed = true;
             }
         });
@@ -2318,8 +2478,8 @@ function resolveMadBomber(bomberIndex, chooseNobody = false) {
     }
 
     if (!chooseNobody) {
-        players[Number(first.value)].alive = false;
-        players[Number(second.value)].alive = false;
+        recordElimination(players[Number(first.value)], "Mad Bomber", `Day ${currentDay}`);
+        recordElimination(players[Number(second.value)], "Mad Bomber", `Day ${currentDay}`);
     }
 
     bomber.bomberResolved = true;
@@ -2361,7 +2521,7 @@ function resolveHunterRevenge(hunterIndex) {
         return;
     }
 
-    players[Number(target.value)].alive = false;
+    recordElimination(players[Number(target.value)], "Hunter", `Day ${currentDay}`);
     players[hunterIndex].hunterRevengeResolved = true;
     resolveEliminationConsequences();
 
@@ -2399,9 +2559,55 @@ function drawEliminationReveal() {
 
 function drawGameResult(message) {
 
+    const livingPlayers = players.filter(player => player.alive);
+    const deadPlayers = players
+        .filter(player => !player.alive)
+        .sort((first, second) =>
+            Number(first.deathOrder || Number.MAX_SAFE_INTEGER) -
+            Number(second.deathOrder || Number.MAX_SAFE_INTEGER)
+        );
+    const livingRows = livingPlayers.length ? livingPlayers.map(player => `
+        <li>
+            <strong>${escapeHTML(player.name)}</strong> —
+            ${escapeHTML(player.role || "Unknown")}
+        </li>
+    `).join("") : "<li>None</li>";
+    const deadGroups = [];
+
+    deadPlayers.forEach(player => {
+        const phase = player.deathPhase || "Unknown phase";
+        let group = deadGroups.find(currentGroup => currentGroup.phase === phase);
+
+        if (!group) {
+            group = { phase, players: [] };
+            deadGroups.push(group);
+        }
+
+        group.players.push(player);
+    });
+
+    const deadRows = deadGroups.length ? deadGroups.map(group => `
+        <h3>${escapeHTML(group.phase)}</h3>
+        <ul>
+            ${group.players.map(player => `
+                <li>
+                    <strong>${escapeHTML(player.name)}</strong> —
+                    ${escapeHTML(player.role || "Unknown")} —
+                    ${escapeHTML(player.deathCause || "Unknown cause")}
+                </li>
+            `).join("")}
+        </ul>
+    `).join("") : "<p>No players were eliminated.</p>";
+
     document.getElementById("screen").innerHTML = `
         <h2>Game Over</h2>
         <p>${readAloud(message)}</p>
+        <hr>
+        <h2>Game Summary</h2>
+        <h3>Still Alive</h3>
+        <ul>${livingRows}</ul>
+        <h3>Eliminated — First to Last</h3>
+        ${deadRows}
         <button type="button" onclick="newGame()">New Game</button>
     `;
 
@@ -2409,7 +2615,13 @@ function drawGameResult(message) {
 
 function newGame() {
 
-    players = [];
+    players = players.map(player => ({
+        id: player.id,
+        name: player.name,
+        role: null,
+        alive: true,
+        connectedTo: null
+    }));
     currentScreen = "players";
     nightOneWakeOrder = [];
     nightOneActionOrder = [];
@@ -2425,6 +2637,8 @@ function newGame() {
     currentDay = 0;
     leftoverCardRole = null;
     resumeMorningAfterBomber = false;
+    roleSearchTerm = "";
+    eliminationSequence = 0;
 
     roles.forEach(role => {
         role.count = 0;
@@ -2491,6 +2705,22 @@ function moderatorRoleName(roleName) {
 
 }
 
+function recordElimination(player, cause, phase) {
+
+    if (!player) {
+        return;
+    }
+
+    player.alive = false;
+
+    if (!player.deathCause) {
+        player.deathCause = cause;
+        player.deathPhase = phase;
+        player.deathOrder = ++eliminationSequence;
+    }
+
+}
+
 function canChooseWerewolfElimination(player) {
 
     return player.team === "Werewolf" &&
@@ -2523,6 +2753,7 @@ window.addPlayer = addPlayer;
 window.removePlayer = removePlayer;
 window.drawPlayerScreen = drawPlayerScreen;
 window.drawRoleScreen = drawRoleScreen;
+window.filterRoleList = filterRoleList;
 window.changeRole = changeRole;
 window.drawGameConfirmation = drawGameConfirmation;
 window.startNightOne = startNightOne;
@@ -2530,13 +2761,14 @@ window.confirmLeftoverCard = confirmLeftoverCard;
 window.drawNightRole = drawNightRole;
 window.confirmNightRole = confirmNightRole;
 window.confirmNightAction = confirmNightAction;
-window.nextNightAction = nextNightAction;
+window.skipNightAction = skipNightAction;
 window.advanceNightAction = advanceNightAction;
 window.advanceNightRole = advanceNightRole;
 window.setNightActionMode = setNightActionMode;
 window.drawDayOne = drawDayOne;
 window.drawDayOnePlayers = drawDayOnePlayers;
 window.startVote = startVote;
+window.cancelVote = cancelVote;
 window.resolveVote = resolveVote;
 window.startNextNight = startNextNight;
 window.continueNightAfterDrunkCard = continueNightAfterDrunkCard;

@@ -135,6 +135,8 @@ function executeAction(
             if (!wolvesDisabledTonight) {
                 targets[0].attackedTonight = true;
                 targets[0].wolfAttackCountsTonight = true;
+                targets[0].pendingDeathCause = "Werewolf attack";
+                targets[0].pendingDeathPhase = `Night ${currentNight}`;
             }
 
             return true;
@@ -146,6 +148,8 @@ function executeAction(
             }
 
             targets[0].attackedTonight = true;
+            targets[0].pendingDeathCause = `${actor.role} attack`;
+            targets[0].pendingDeathPhase = `Night ${currentNight}`;
 
             return true;
 
@@ -234,6 +238,12 @@ function executeAction(
 
             targets[0].role = "Werewolf";
             targets[0].team = "Werewolf";
+            targets[0].attackedTonight = false;
+            targets[0].attackedByWolvesTonight = false;
+            targets[0].wolfAttackCountsTonight = false;
+            targets[0].wolfTargetTonight = false;
+            targets[0].pendingDeathCause = null;
+            targets[0].pendingDeathPhase = null;
 
             return true;
 
