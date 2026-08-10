@@ -1,0 +1,51 @@
+body{
+
+    background:#222;
+    color:white;
+    font-family:Arial;
+
+}
+
+.container{
+
+    width:600px;
+
+    margin:auto;
+
+    margin-top:40px;
+
+}
+
+.playerRow{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    background:#333;
+
+    padding:10px;
+
+    margin:5px 0;
+
+    border-radius:5px;
+
+}
+
+button{
+
+    padding:10px 15px;
+
+    cursor:pointer;
+
+}
+
+.actionContinue,
+.actionButtons{
+
+    display:block;
+    margin-top:16px;
+
+}
