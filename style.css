@@ -95,12 +95,28 @@ q{
     box-sizing:border-box;
     width:100%;
     padding:12px;
-    margin:0 0 12px;
+    margin:0;
     border:1px solid #555d70;
     border-radius:5px;
     background:#151a27;
     color:white;
     font-size:1rem;
+}
+
+.roleToolbar{
+    display:flex;
+    align-items:stretch;
+    gap:10px;
+    margin:0 0 12px;
+}
+
+.roleToolbar .roleSearch{
+    flex:1;
+    min-width:0;
+}
+
+.roleToolbar select{
+    width:min(46%, 190px);
 }
 
 .roleValue{
@@ -121,4 +137,5 @@ q{
         margin:10px auto;
         padding:18px;
     }
+
 }
