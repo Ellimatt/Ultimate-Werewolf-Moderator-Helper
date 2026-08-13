@@ -1,2 +1,3 @@
 # Ultimate-Werewolf-Moderator-Helper
-A Helper
+A Werewolf Helper
+https://ellimatt.github.io/Ultimate-Werewolf-Moderator-Helper/
