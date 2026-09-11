@@ -1,0 +1,81 @@
+// Moderator-facing descriptions for each role.
+
+const roleHelpText = {
+    "Alpha Wolf": "A Werewolf who may replace one Werewolf elimination with a conversion once per game.",
+    "Beholder": "Privately learns who the Seer is. Optional rules can provide updates when another player becomes the Seer.",
+    "Shadow Wolf": "A Werewolf who also silences one player each night.",
+    "Butcher": "Chooses a player on the first night. If the Werewolves attack the Butcher, the chosen player is eliminated instead.",
+    "Apprentice Seer": "Becomes a Seer when the Seer dies.",
+    "Bodyguard": "Chooses a player each night to protect from Werewolf attacks.",
+    "Cupid": "Links two players on the first night. When either lover dies, the other dies as well.",
+    "Cursed": "Begins on the Villager team but becomes a Werewolf when attacked.",
+    "Dire Wolf": "Connects themself to a player. If that player dies, the Dire Wolf also dies. The connection does not work in reverse.",
+    "Diseased": "If eliminated by the Werewolves, their elimination choice on the following night does not count.",
+    "Doppelganger": "Chooses a player and privately checks their role each night. When that player dies, the Doppelganger inherits their role.",
+    "Drunk": "Appears and behaves as a Villager until receiving their true role at the start of Night 3.",
+    "Hunter": "When eliminated, They may chooses one living player to eliminate as well.",
+    "Huntress": "May choose one player to eliminate once per game.",
+    "Insomniac": "Learns whether either of the two players currently seated beside them took an action that night.",
+    "Lone Wolf": "A wolf who wins when they are the only wolf left in the game.",
+    "Lycan": "A Villager who appears as a Werewolf.",
+    "Mad Bomber": "When eliminated, they also eliminates the two living players currently seated beside them.",
+    "Magistrate": "Chooses one player each night who may not be eliminated by the village vote the following day.",
+    "Martyr": "Before a Day-vote role is revealed, they may inherit that role. The village sees the Martyr card in its place.",
+    "Mason": "A Villager who identifies the other Masons.",
+    "Mayor": "A Villager whose vote counts twice. The moderator tracks the additional vote without revealing the Mayor.",
+    "Mentalist": "Compares two selected players and learns whether they are on the same team.",
+    "Minion": "Knows the Werewolves and wins with their team, but do not wake with them.",
+    "Mystic Seer": "Selects a player and learns that player's exact role.",
+    "Old Hag": "Selects a player who must leave the village for the following day.",
+    "P.I.": "Checks a player and the players currently seated beside them, learning whether the group contains a Werewolf.",
+    "Pacifist": "Always votes to spare the accused player. The moderator accounts for that vote without revealing the Pacifist.",
+    "Priest": "Permanently blesses one player against all future Werewolf attacks. Other causes can still eliminate that player.",
+    "Prince": "When voted for elimination, the Prince is revealed and remains in the game. The Prince can be eliminated by any other cause.",
+    "Revealer": "May reveal a player's role once per game. A Werewolf-team target is eliminated; an incorrect target eliminates the Revealer.",
+    "Seer": "Selects a player and learns whether that player appears as a Werewolf.",
+    "Sorceress": "Searches for the Seer and wins with the Werewolf team, but does not wake with them. An optional rule can identify Werewolves separately from Other.",
+    "Sasquatch": "Begins as a Villager and becomes a Werewolf after a Day ends without an elimination.",
+    "Shepherd": "The flock absorbs the first Werewolf attack against the Shepherd. Later Werewolf attacks eliminate the Shepherd normally.",
+    "Spellcaster": "Silences one player for the following day.",
+    "Tough Guy": "A Werewolf attack does not eliminate the Tough Guy until the following Night. Other deaths are immediate.",
+    "Tracker": "When a currently adjacent player is eliminated by the Werewolves, may inspect one player for a Werewolf.",
+    "Village Idiot": "Always votes to eliminate the accused player. The moderator accounts for that vote without revealing the Village Idiot.",
+    "Villager": "Has no night action and wins with the Villager team.",
+    "Werewolf": "Wakes with the other Werewolves and chooses a target each night.",
+    "Witch": "Once per game, may save an attacked player or eliminate a player.",
+    "Wolf Cub": "If eliminated, the Werewolves receive two elimination choices the following night.",
+    "Wolf Man": "A Werewolf who appears as a Villager.",
+    "Fruit Brute": "Joins the Werewolf targeting phase. The choice works while another wolf is still alive, but has no effect when the Fruit Brute is alone.",
+    "Wild Child": "Chooses a role model and becomes a Werewolf when that player dies, according to the selected death conditions."
+    ,"Blacksmith": "Once per game, gives another player armor that blocks one Werewolf attack before breaking."
+    ,"Bailiff": "Breaks a tied daytime elimination vote according to the Bailiff's vote."
+    ,"Grave Digger": "After a Werewolf elimination, learns that victim's exact role on the following night."
+    ,"Locksmith": "Barricades one player each night, blocking Werewolf targeting and that player's own night action."
+    ,"Canary": "Learns whether either player currently seated beside them is a Werewolf."
+    ,"Judge": "Once per game, may publicly reveal during a daytime vote to pardon the accused player and end the Day."
+    ,"Witch Doctor": "Gives a player a temporary voodoo doll. If attacked by a Werewolf that night, the attack is redirected to the closest Werewolf."
+    ,"Sentry": "Links two players as a patrol and learns whether either specifically targeted the other that night."
+    ,"Sentinel": "Near the end of each night, chooses a player and learns how many night roles visited that player."
+    ,"Vengeful Wolf": "When the Vengeful Wolf is the last Werewolf, the Werewolves eliminate two players each night."
+    ,"Ravenous Wolf": "If the Werewolves complete two consecutive nights without eliminating anyone, they eliminate two players on the third night."
+    ,"Crimson Wolf": "While the Crimson Wolf is alive on Night 3, Werewolf attacks ignore every protection, Tough Guy's delay, and the Diseased penalty."
+    ,"Big Bad Wolf": "Counts as two Werewolves when checking Werewolf parity."
+    ,"Death Hound": "After the Werewolves eliminate a player, learns that player's exact role on the following night."
+    ,"Mystic Wolf": "Wakes with the Werewolves and also inspects one player's exact role each night."
+    ,"The Thing": "Secretly joins the Werewolf team while performing and appearing as an additional role card. Its true identity remains hidden until the game ends."
+    ,"Phantom Wolf": "Chooses one player on the first night who will appear as a Werewolf to investigative roles."
+    ,"Pet Wolf": "Chooses an owner on the first night. If the Pet Wolf is eliminated first, its owner is eliminated as well."
+    ,"Twin": "May take the place of a player who was just voted for elimination, dying instead without inheriting that player's role."
+    ,"Guardian": "Chooses one player on the first night. The Guardian and that player protect one another from Werewolf attacks in different ways."
+    ,"Scribe": "While the Scribe is alive, votes are public. After the Scribe dies, everyone votes anonymously with their eyes closed."
+    ,"Exposer": "Chooses a player each night. When the village wakes, that player's role is announced without identifying whom the Exposer selected."
+    ,"Silversmith": "Cannot be eliminated by a normal Werewolf attack."
+    ,"Oracle": "Inspects players like the Seer. After finding a Werewolf, the Oracle cannot inspect anyone new until that Werewolf is eliminated."
+};
+
+function roleWakeDescription(role) {
+    if (role.wake === "Every") return "Every night";
+    if (String(role.wake) === "1") return "Night 1";
+    return role.wake ? String(role.wake) : "Does not wake";
+}
+

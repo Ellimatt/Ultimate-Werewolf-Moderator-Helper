@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Ultimate Werewolf Assistant</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+
+    <link
+        id="appStylesheet"
+        rel="stylesheet"
+    >
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Ultimate Werewolf Assistant</h1>
+
+        <div class="topUtilityButtons">
+            <button type="button" data-click="showGameGuide()"><span aria-hidden="true">ⓘ</span> Game Guide</button>
+            <button id="gameSettingsButton" type="button" data-click="showGameSettings()" hidden><span aria-hidden="true">⚙</span> Game Settings</button>
+            <button type="button" data-click="showDesignSettings()"><span aria-hidden="true">✦</span> Design</button>
+            <button id="savedGamesButton" type="button" data-click="showSavedGames()" hidden><span aria-hidden="true">▣</span> Saved Games</button>
+        </div>
+
+        <div id="phaseHeader" class="phaseHeader" hidden></div>
+
+        <div id="screen"></div>
+
+    </div>
+
+    <!-- Main application -->
+    <script>
+        (async function loadWerewolfApplication() {
+            const nestedBase = "Werewolf/";
+            let assetBase = "";
+
+            try {
+                const nestedApp = await fetch(`${nestedBase}js/app.js`, {
+                    cache: "no-store"
+                });
+                if (nestedApp.ok) assetBase = nestedBase;
+            } catch (error) {
+                assetBase = "";
+            }
+
+            window.WEREWOLF_ASSET_BASE = assetBase;
+            window.WEREWOLF_DEFER_START = true;
+            document.getElementById("appStylesheet").href = `${assetBase}style.css`;
+
+            // Shared infrastructure loads first. Feature files can then share the
+            // same classic-script scope, and bindings are applied only after every
+            // public handler has been defined.
+            const scripts = [
+                "descriptions/role-settings.js",
+                "core/state.js",
+                "core/utilities.js",
+                "app.js",
+                "core/persistence.js",
+                "core/role-logic.js",
+                "ui/chrome.js",
+                "ui/modals.js",
+                "ui/settings.js",
+                "descriptions/role-descriptions.js",
+                "setup/role-filters.js",
+                "players.js",
+                "actions.js",
+                "game/night.js",
+                "game/day.js",
+                "game/eliminations.js",
+                "game/summary.js",
+                "game/win-conditions.js",
+                "ui/events.js",
+                "bindings.js"
+            ];
+            for (const filename of scripts) {
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement("script");
+                    script.src = `${assetBase}js/${filename}`;
+                    script.onload = resolve;
+                    script.onerror = () => reject(new Error(`Could not load ${script.src}`));
+                    document.body.appendChild(script);
+                });
+            }
+
+            await window.initializeWerewolfApp();
+        })().catch(error => {
+            console.error(error);
+            document.getElementById("screen").innerHTML =
+                '<p class="loadError">The application files could not be loaded. Check the published folder structure.</p>';
+        });
+    </script>
+</body>
+
+</html>
